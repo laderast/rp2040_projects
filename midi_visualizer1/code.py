@@ -1,4 +1,9 @@
-# Write your code here :-)
+# MIDI visualizer
+# Takes usb midi notes from channel 8
+# And visualizes them on the 240x240 screen
+# Of Pimoroni explorer.
+# Simple visualizer that visualizes MIDI notes
+# As part of a 144 note grid
 """
 adapted from http://helloraspberrypi.blogspot.com/2021/01/raspberry-pi-picocircuitpython-st7789.html
 """
@@ -10,8 +15,9 @@ import terminalio
 import displayio
 import busio
 from adafruit_display_text import label
+from adafruit_st7789 import ST7789
+from adafruit_display_text import label
 from adafruit_display_shapes import rect
-import time
 import random
 import usb_midi
 import adafruit_midi
@@ -33,17 +39,6 @@ print("Listening on input channel:", midi.in_channel + 1)
 
 # Release any resources currently in use for the displays
 displayio.release_displays()
-
-
-import board
-import busio
-import terminalio
-import displayio
-from adafruit_display_text import label
-from adafruit_st7789 import ST7789
- 
-# Release any resources currently in use for the displays
-displayio.release_displays()
  
 tft_cs = board.GP17
 tft_dc = board.GP16
@@ -57,9 +52,6 @@ display = ST7789(display_bus, width=240, height=240, rowstart=80, rotation=180)
 # Make the display context
 splash = displayio.Group()
 display.show(splash)
-
-string_msg = ""
-string_val = ""
 
 cell_height = 20
 cell_width = 20
@@ -83,6 +75,7 @@ while True:
     msg = midi.receive()
     if msg is not None:
         if isinstance(msg, NoteOn):
+            #if note on detected, change fill of the note grid box
             string_msg = 'NoteOn'
             # get note number
             string_val = str(msg.note)
@@ -91,6 +84,7 @@ while True:
     # if a NoteOff message...
         if isinstance(msg, NoteOff):
             string_msg = 'NoteOff'
+            # if midi note off detected, turn off fill for that note
             # get note number
             string_val = str(msg.note)
             int_note = int(msg.note)
