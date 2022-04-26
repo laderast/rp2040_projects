@@ -1,7 +1,3 @@
-# SPDX-FileCopyrightText: 2021 Kattni Rembor for Adafruit Industries
-# SPDX-License-Identifier: MIT
-
-"""I2C rotary encoder NeoPixel color picker and brightness setting example."""
 import board
 import time
 from rainbowio import colorwheel
