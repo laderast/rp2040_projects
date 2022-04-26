@@ -63,11 +63,18 @@ bpm_text_area = label.Label(
 )
 splash.append(bpm_text_area)
 
-bpm_rect = Rect(0, 16, 128, 16, fill=None, outline=0xFFFFFF)
+bpm_rect = Rect(0, 16, 64, 16, fill=None, outline=0xFFFFFF)
 splash.append(bpm_rect)
 
+step_text = "Steps: 16"
+step_text_area = label.Label(terminalio.FONT, text=step_text, color=0xFFFFFF, x=66, y=22)
+splash.append(step_text_area)
+
+step_rect = Rect(64, 16, 64, 16, fill=None,outline = 0xFFFFFF)
+splash.append(step_rect)
+
 #  text for key
-key_text = "Key:    "
+key_text = "Key: C"
 key_text_area = label.Label(
     terminalio.FONT, text=key_text, color=0xFFFFFF, x=4, y=36
 )
@@ -85,6 +92,8 @@ splash.append(prob_text_area)
 
 mode_rect = Rect(50, 30, 78, 16, fill=None, outline=0xFFFFFF)
 splash.append(mode_rect)
+
+
 
 # midi setup
 #uart = busio.UART(board.TX, board.RX, baudrate=31250)
@@ -166,9 +175,15 @@ scale_degree = 0
 scale_degree2 = 0
 octave = 0
 
+key_pos = 0
+orig_key_pos = 0
+previous_key_pos = 0
+previous_tempo = 60
 run = 0
 run_state = False
 menu_pos = 0
+
+menu_item = "bpm"
 
 while True:
 
@@ -180,26 +195,39 @@ while True:
 
     position = -encoder.position
 
-    if abs(position - prev_position) > 0:
-        tempo = position + orig_tempo
-        #print(tempo)
-        bpm_text_area.text = "BPM:%d" % tempo
-        #  updates calculations for beat division
-        sixteenth = 15 / tempo
-        eighth = 30 / tempo
-        quarter = 60 / tempo
-        half = 120 / tempo
-        whole = 240 / tempo
-        #  updates array of beat divisions
-        beat_division = [whole, half, quarter, eighth, sixteenth]
-        #  updates display
-        bpm_text_area.text = "BPM:%d" % tempo
-        print("tempo is", tempo)
-        time.sleep(0.001)
-        divide = half
+    if menu_item == "bpm":
+        #encoder.set_encoder_position(0)
+        diff = position - prev_position
+        if abs(diff) > 0:
+            tempo = diff + previous_tempo
+            #print(tempo)
+            bpm_text_area.text = "BPM:%d" % tempo
+            #  updates calculations for beat division
+            sixteenth = 15 / tempo
+            eighth = 30 / tempo
+            quarter = 60 / tempo
+            half = 120 / tempo
+            whole = 240 / tempo
+            #  updates array of beat divisions
+            beat_division = [whole, half, quarter, eighth, sixteenth]
+            #  updates display
+            bpm_text_area.text = "BPM:%d" % tempo
+            time.sleep(0.001)
+            divide = half
+            previous_tempo = tempo
 
-        prev_position = position
+    if menu_item == "key":
+        #encoder = set_encoder_position(0)
+        diff = position - prev_position
+        if abs(diff) > 0:
+            key_pos = (previous_key_pos + diff) % len(key_names)
+            key_n = key_names[key_pos]
+            key_text_area.text = "Key: " + key_n
+            time.sleep(0.001)
+            previous_key_pos = key_pos             
 
+
+    prev_position = position
 
     if switch.value:
         run_state = True
