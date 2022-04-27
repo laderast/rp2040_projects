@@ -3,6 +3,7 @@
 
 """I2C rotary encoder NeoPixel color picker and brightness setting example."""
 from bisect import bisect
+from contextlib import nullcontext
 from pickle import BINBYTES
 import board
 import time
@@ -14,6 +15,7 @@ import neopixel as neop
 import board
 import busio
 import digitalio as digio
+from random import random
 import usb_midi
 import adafruit_midi
 from adafruit_midi.note_on import NoteOn
@@ -23,6 +25,13 @@ import displayio
 from adafruit_display_shapes.rect import Rect
 from adafruit_display_text import label
 import adafruit_displayio_ssd1306
+
+
+scale_dict = {
+    "min_pent": [0, 2, 3, 5, 7, 10, 12],
+    "minor": [0, 2, 3, 5, 7, 8, 11, 12],
+    "maj_pent": [0, 2, 4, 7, 9, 12]
+}
 
 displayio.release_displays()
 oled_reset = board.D9
@@ -57,6 +66,14 @@ splash.append(menu_text_area)
 
 menu_rect = Rect(0, 0, 64, 16, fill=None, outline=0xFFFFFF)
 splash.append(menu_rect)
+
+scale_text = "Scale: min_pent"
+scale_text_area = label.Label(
+    terminalio.FONT, text = scale_text, color = 0xFFFFFF, x= 66, y=6
+)
+
+scale_rect = Rect(64, 0, 64, 16, fill=None, outline=0xFFFFFF)
+splash.append(scale_rect)
 
 #  text for BPM
 bpm_text = "BPM: %d" % orig_tempo
@@ -105,20 +122,6 @@ midi2 = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=7)
 
 #midi = adafruit_midi.MIDI(midi_out=uart, out_channel=5)
 #midi2 = adafruit_midi.MIDI(midi_out=uart, out_channel=7)
-#  arrays of notes in each key
-aminor_pent = [57, 57, 60, 62, 64, 67, 67, 69, 69]
-key_of_C = [60, 62, 64, 65, 67, 69, 71, 72, 74]
-key_of_Csharp = [61, 63, 65, 66, 68, 70, 72, 73]
-key_of_D = [62, 64, 66, 67, 69, 71, 73, 74]
-key_of_Dsharp = [63, 65, 67, 68, 70, 72, 74, 75]
-key_of_E = [64, 66, 68, 69, 71, 73, 75, 76]
-key_of_F = [65, 67, 69, 70, 72, 74, 76, 77]
-key_of_Fsharp = [66, 68, 70, 71, 73, 75, 77, 78]
-key_of_G = [67, 69, 71, 72, 74, 76, 78, 79]
-key_of_Gsharp = [68, 70, 72, 73, 75, 77, 79, 80]
-key_of_A = [69, 71, 73, 74, 76, 78, 80, 81]
-key_of_Asharp = [70, 72, 74, 75, 77, 79, 81, 82]
-key_of_B = [71, 73, 75, 76, 78, 80, 82, 83]
 
 #  array of keys
 keys = [key_of_C, key_of_Csharp, key_of_D, key_of_Dsharp, key_of_E, key_of_F, key_of_Fsharp,
@@ -148,6 +151,22 @@ B_name = "B"
 key_names = [C_name, Csharp_name, D_name, Dsharp_name, E_name, F_name, Fsharp_name,
              G_name, Gsharp_name, A_name, Asharp_name, B_name]
 
+key_dict = {
+    "C": 0,
+    "C#": 1,
+    "D" : 2,
+    "D#" : 3,
+    "E" : 4,
+    "F" : 5,
+    "F#" : 6,
+    "G" : 7,
+    "G#" : 8,
+    "A" : 9,
+    "A#": 10,
+    "B": 11
+}
+
+base_pitch = key_dict["C"] + 48
 menu_list = ["bpm", "key", "steps", "prob", "scale"]
 
 # For use with the STEMMA connector on QT Py RP2040
@@ -189,19 +208,69 @@ menu_pos = 0
 
 bits = [0 for i in range(0, previous_step_pos) if True]
 gate = [0 for i in range(0, previous_step_pos) if True]
-
+scale_names = keys(scale_dict)
 
 settings = {
     "bpm": previous_tempo,
     "key" : key_names[previous_key_pos],
     "prob" : previous_prob_pos,
     "steps" : previous_step_pos,
+    "scale" : 0,
     "bits" : bits,
     "gate" : gate
 }
 
-menu_item = "bpm"
+class turing_machine:
+    bits = []
+    gate = []
+    range = 2
+    def __init__(self, steps=16, interval = 3, prob=0.5):
+        self.bits = [0 for i in range(0, steps) if True]
+        self.gate = [0 for i in range(0, steps) if True]
+        self.prob = prob
+        self.note = None
+        self.trig = False
+        self.set_gate()
+        return(self)
+    def set_prob(self, prob):
+        self.prob = prob
+        return(self)
+    def set_gate(self, interval=3):
+        self.gate = [1 if i % interval == 0 else 0 for i in range(0,len(self.gate))]
+        self.gate[len(self.gate)-1] = 0
+        return(self)
+    def tick(self):
+        self.max = 1
+        feedback = self.bits[0]
+        acc = feedback
+        self.bits = self.bits.pop()
+        for i in range(0, len(self.bits)-2):
+            acc = (acc * 2) + bits[i]
+            self.max = (self.max * 2) + 1
+            if self.bits[i] <> 0 and self.gate[i] <> 0:
+                trig = True
+        flip = random()
+        flip_inv = 1 - flip
+        if self.prob >= flip:
+            #if self.prob > 0.5:
+            #    self.bits.append(int(not feedback))
+            #else: 
+            self.bits.append(int(feedback))
+        else:
+            self.bits.append(randint(0,1))
+        if self.trig:
+            self.note = (self.acc / self.max * self.range)
+        else:
+            self.note = None
+        return(self)
 
+
+
+
+
+
+
+menu_item = "bpm"
 
 while True:
 
