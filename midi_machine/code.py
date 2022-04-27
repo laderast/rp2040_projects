@@ -25,6 +25,7 @@ import displayio
 from adafruit_display_shapes.rect import Rect
 from adafruit_display_text import label
 import adafruit_displayio_ssd1306
+import turing
 
 
 scale_dict = {
@@ -219,55 +220,6 @@ settings = {
     "bits" : bits,
     "gate" : gate
 }
-
-class turing_machine:
-    bits = []
-    gate = []
-    range = 2
-    def __init__(self, steps=16, interval = 3, prob=0.5):
-        self.bits = [0 for i in range(0, steps) if True]
-        self.gate = [0 for i in range(0, steps) if True]
-        self.prob = prob
-        self.note = None
-        self.trig = False
-        self.set_gate()
-        return(self)
-    def set_prob(self, prob):
-        self.prob = prob
-        return(self)
-    def set_gate(self, interval=3):
-        self.gate = [1 if i % interval == 0 else 0 for i in range(0,len(self.gate))]
-        self.gate[len(self.gate)-1] = 0
-        return(self)
-    def tick(self):
-        self.max = 1
-        feedback = self.bits[0]
-        acc = feedback
-        self.bits = self.bits.pop()
-        for i in range(0, len(self.bits)-2):
-            acc = (acc * 2) + bits[i]
-            self.max = (self.max * 2) + 1
-            if self.bits[i] <> 0 and self.gate[i] <> 0:
-                trig = True
-        flip = random()
-        flip_inv = 1 - flip
-        if self.prob >= flip:
-            #if self.prob > 0.5:
-            #    self.bits.append(int(not feedback))
-            #else: 
-            self.bits.append(int(feedback))
-        else:
-            self.bits.append(randint(0,1))
-        if self.trig:
-            self.note = (self.acc / self.max * self.range)
-        else:
-            self.note = None
-        return(self)
-
-
-
-
-
 
 
 menu_item = "bpm"
