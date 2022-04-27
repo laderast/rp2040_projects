@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2021 Kattni Rembor for Adafruit Industries
+# SPDX-License-Identifier: MIT
+
+"""I2C rotary encoder NeoPixel color picker and brightness setting example."""
+from bisect import bisect
+from pickle import BINBYTES
 import board
 import time
 from rainbowio import colorwheel
@@ -43,13 +49,13 @@ splash = displayio.Group()
 display.show(splash)
 
 
-menu_text = "Control: bpm" 
+menu_text = "Menu: bpm" 
 menu_text_area = label.Label(
     terminalio.FONT, text=menu_text, color=0xFFFFFF, x=4, y=6
 )
 splash.append(menu_text_area)
 
-menu_rect = Rect(0, 0, 128, 16, fill=None, outline=0xFFFFFF)
+menu_rect = Rect(0, 0, 64, 16, fill=None, outline=0xFFFFFF)
 splash.append(menu_rect)
 
 #  text for BPM
@@ -80,7 +86,7 @@ key_rect = Rect(0, 30, 50, 16, fill=None, outline=0xFFFFFF)
 splash.append(key_rect)
 
 #  text for mode
-prob_text = "Prob:           "
+prob_text = "Prob: 0.5"
 prob_text_area = label.Label(
     terminalio.FONT, text=prob_text, color=0xFFFFFF, x=54, y=36
 )
@@ -174,12 +180,28 @@ octave = 0
 key_pos = 0
 orig_key_pos = 0
 previous_key_pos = 0
+previous_step_pos = 16
+previous_prob_pos = 0.5
 previous_tempo = 60
 run = 0
 run_state = False
 menu_pos = 0
 
+bits = [0 for i in range(0, previous_step_pos) if True]
+gate = [0 for i in range(0, previous_step_pos) if True]
+
+
+settings = {
+    "bpm": previous_tempo,
+    "key" : key_names[previous_key_pos],
+    "prob" : previous_prob_pos,
+    "steps" : previous_step_pos,
+    "bits" : bits,
+    "gate" : gate
+}
+
 menu_item = "bpm"
+
 
 while True:
 
@@ -187,7 +209,7 @@ while True:
         menu_pos = menu_pos + 1
         menu_pos = menu_pos % len(menu_list)
         menu_item = menu_list[menu_pos]
-        menu_text_area.text = "Control: " + menu_item
+        menu_text_area.text = "Menu: " + menu_item
 
     position = -encoder.position
 
@@ -208,9 +230,19 @@ while True:
             beat_division = [whole, half, quarter, eighth, sixteenth]
             #  updates display
             bpm_text_area.text = "BPM:%d" % tempo
+            settings["bpm"] = tempo
             time.sleep(0.001)
             divide = half
             previous_tempo = tempo
+
+    if menu_item == "steps":
+        diff = position - prev_position
+        if abs(diff) > 0:
+            step_pos = (previous_step_pos + diff) % 16
+            time.sleep(0.001)
+            previous_step_pos = step_pos
+            settings["steps"] = step_pos
+            step_text_area.text = "Steps: %d" % step_pos
 
     if menu_item == "key":
         #encoder = set_encoder_position(0)
@@ -218,10 +250,19 @@ while True:
         if abs(diff) > 0:
             key_pos = (previous_key_pos + diff) % len(key_names)
             key_n = key_names[key_pos]
+            settings["key"] = key_pos
             key_text_area.text = "Key: " + key_n
             time.sleep(0.001)
             previous_key_pos = key_pos             
 
+    if menu_item == "prob":
+        diff = position - prev_position
+        if abs(diff) > 0:
+            prob_pos = previous_prob_pos + (diff * 0.02)
+            time.sleep(0.001)
+            settings["prob"] = prob_pos
+            prob_text_area.text = "Prob: " + str(prob_pos)
+            previous_prob_pos = prob_pos
 
     prev_position = position
 
