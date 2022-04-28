@@ -1,4 +1,5 @@
 from math import floor
+import random
 
 class turing_machine:
     gate = []
@@ -40,11 +41,11 @@ class turing_machine:
     
     def tick(self):
         self.max = 1
-        feedback = self.bits[0]
+        feedback = self.bits.pop(0)
+        print(self.bits)
         acc = feedback
-        self.bits.pop(0)
         for i in range(0, len(self.bits)-2):
-            acc = (acc * 2) + bits[i]
+            acc = (acc * 2) + self.bits[i]
             self.max = (self.max * 2) + 1
             if self.bits[i] != 0 and self.gate[i] != 0:
                 trig = True
@@ -62,4 +63,3 @@ class turing_machine:
     
     def get_note(self):
         return self.note
-
