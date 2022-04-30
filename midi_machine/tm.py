@@ -4,9 +4,8 @@ import random
 class turing_machine:
     gate = []
     bits = []
-    range = 2
 
-    def __init__(self, steps, interval, prob):
+    def __init__(self, steps=8, interval=3, prob=0.5, bit_string=None, range=32):
         #if steps == 0:
         #    raise(TypeError("Steps should be greater than 0"))
         if interval > steps:
@@ -15,12 +14,16 @@ class turing_machine:
         self.gate = [0 for i in range(0, steps) if True]
         if prob > 1:
             raise(TypeError("Proability not in range"))
-        self.prob = prob
+        self.prob = proba
         self.note = None
         self.trig = False
+        self.range = range
         self.set_gate(interval=interval)
-        #return(None)
-
+        if bit_string is None:
+            self.seed_bits()
+        else: 
+            self.set_bits(bit_string)
+        # blah blah
 
     def set_range(self, range):
         self.range = range
@@ -41,7 +44,8 @@ class turing_machine:
         return(self)
 
     def set_bits(self, bit_string):
-        bit_string.split()
+        self.bits = [int(i) for i in bit_string]
+        return(self)
 
     def get_bits(self):
         bit_string = "".join([str(n) for n in self.bits])
@@ -56,23 +60,21 @@ class turing_machine:
         feedback = self.bits[0]
         acc = feedback
         self.trig = False 
-        for i in range(0, len(self.bits)-2):
+        for i in range(len(self.bits)-1):
             self.bits[i] = self.bits[i+1]
             acc = (acc * 2) + self.bits[i]
             self.max = (self.max * 2) + 1
-            print(i)
             if self.bits[i] != 0 and self.gate[i] != 0:
                 self.trig = True
 
-        print(self.trig)        
         flip = random.random()
         flip_inv = 1 - flip
-        if self.prob >= flip:
+        if flip >= self.prob:
             self.bits[len(self.bits)-1] = feedback
         else:
             self.bits[len(self.bits)-1] = random.randint(0,1)     
         if self.trig:
-            self.note = (acc / self.max * self.range)
+            self.note = floor((acc / self.max) * self.range)
         else:
             self.note = None
         return(self)
@@ -81,6 +83,13 @@ class turing_machine:
         return self.note
 
 
+
 class test:
     def __init__(self, age):
         self.age = age
+
+
+def move_bits(bits):
+    for i in range(0,len(bits)-2):
+        bits[i] = bits[i+1]
+    return(bits)
