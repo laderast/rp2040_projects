@@ -1,23 +1,27 @@
+from array import array
 from math import floor
+from math import isnan
 import random
 
-class turing_machine:
-    gate = []
+class tmi:
     bits = []
+    gate = []
 
-    def __init__(self, steps=8, interval=3, prob=0.5, bit_string=None, range=32):
+    def __init__(self, step=8, interval=3, prob=0.5, bit_string=None, range_note=32):
         #if steps == 0:
         #    raise(TypeError("Steps should be greater than 0"))
-        if interval > steps:
+        if interval > step:
             raise(TypeError("Interval should be less than number of steps"))
-        self.bits = [0 for i in range(0, steps) if True]
-        self.gate = [0 for i in range(0, steps) if True]
+        steps = int(step)
+        self.bits = [0 for j in range(int(step))]
+        self.gate = [0 for j in range(step)]
         if prob > 1:
-            raise(TypeError("Proability not in range"))
-        self.prob = proba
+            raise(TypeError("Probability not in range"))
+        self.prob = prob
         self.note = None
         self.trig = False
-        self.range = range
+        self.range_note = range_note
+        self.interval = interval
         self.set_gate(interval=interval)
         if bit_string is None:
             self.seed_bits()
@@ -25,8 +29,8 @@ class turing_machine:
             self.set_bits(bit_string)
         # blah blah
 
-    def set_range(self, range):
-        self.range = range
+    def set_range(self, range_note):
+        self.range_notes = range_note
         return(self)
 
     def set_prob(self, prob):
@@ -45,6 +49,18 @@ class turing_machine:
 
     def set_bits(self, bit_string):
         self.bits = [int(i) for i in bit_string]
+        return(self)
+    
+    def set_bit_length(self, steps):
+        bit_string = self.get_bits()
+        diff = len(bit_string) - steps
+        diff = min(16, diff)
+        if diff > 0:
+            pad_string = "0" * diff
+            self.set_bits(bit_string + pad_string)
+        if diff < 0:
+            new_bits = bit_string[0:steps]
+            self.set_bits(new_bits)
         return(self)
 
     def get_bits(self):
@@ -74,7 +90,8 @@ class turing_machine:
         else:
             self.bits[len(self.bits)-1] = random.randint(0,1)     
         if self.trig:
-            self.note = floor((acc / self.max) * self.range)
+            if not isnan(acc / self.max):
+                self.note = floor((acc / self.max) * self.range_note)
         else:
             self.note = None
         return(self)
@@ -89,7 +106,14 @@ class test:
         self.age = age
 
 
-def move_bits(bits):
-    for i in range(0,len(bits)-2):
-        bits[i] = bits[i+1]
-    return(bits)
+def scale_expand(scale):
+    out_list = [[(scale[e] + 12 * i) for e in range(len(scale))] for i in range(0,10)]
+    flat_list = [item for sublist in out_list for item in sublist]
+    return(flat_list)
+
+
+def quantize_to_scale(note, scale):
+    full_scale = scale_expand(scale)
+    dist = [abs(note - e) for e in scale]
+    out_note = scale[min(range(len(scale)), key = lambda i: abs(scale[i]-note))]
+    return(out_note)
