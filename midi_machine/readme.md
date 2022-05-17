@@ -14,6 +14,6 @@ A Turing Machine is an implementation of an Linear Feedback Shift Register with 
 
 ## Build
 
-The good news is that there is only a little soldering required - soldering the rotary encoder to the Neopixel board. There are five total contacts you will need to solder.
+The good news is that there is only a little soldering required - [soldering the rotary encoder to the rotary encocder board](https://learn.adafruit.com/adafruit-i2c-qt-rotary-encoder). There are five total contacts you will need to solder.
 
 You can optionally solder header pins to the QT Py itself - this will help you out if you decide to breadboard the project to add other extras (such as a serial MIDI out).
